@@ -3,8 +3,8 @@
 "use strict";
 
 /*  changes:
-    I had problems with the cordova.exe method and the timing of the plugin initialization,
-    so I force require cordova.exe if it doesnt exist,
+    I had problems with the cordova.exec method and the timing of the plugin initialization,
+    so I force require cordova.exec if it doesnt exist,
     and I moved the plugin initialization to a simple method on the nfc object that 
     you can call from your app at the right time
     
