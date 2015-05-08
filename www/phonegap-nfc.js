@@ -2,32 +2,18 @@
 /*global cordova, console */
 "use strict";
 
-function handleNfcFromIntentFilter() {
+/*  changes:
+    I had problems with the cordova.exe method and the timing of the plugin initialization,
+    so I force require cordova.exe if it doesnt exist,
+    and I moved the plugin initialization to a simple method on the nfc object that 
+    you can call from your app at the right time
+    
+    NOTE: you MUST call window.nfc.initializePlugin() from your app
+    
+    */
 
-    // This was historically done in cordova.addConstructor but broke with PhoneGap-2.2.0.
-    // We need to handle NFC from an Intent that launched the application, but *after*
-    // the code in the application's deviceready has run.  After upgrading to 2.2.0,
-    // addConstructor was finishing *before* deviceReady was complete and the
-    // ndef listeners had not been registered.
-    // It seems like there should be a better solution.
-    if (cordova.platformId === "android" || cordova.platformId === "windows") {
-        setTimeout(
-            function () {
-                cordova.exec(
-                    function () {
-                        console.log("Initialized the NfcPlugin");
-                    },
-                    function (reason) {
-                        console.log("Failed to initialize the NfcPlugin " + reason);
-                    },
-                    "NfcPlugin", "init", []
-                );
-            }, 10
-        );
-    }
-}
-
-document.addEventListener('deviceready', handleNfcFromIntentFilter, false);
+/* ensuring cordova.exec is loaded */
+cordova.exec = cordova.exec || cordova.require("cordova/exec");
 
 var ndef = {
 
@@ -411,6 +397,30 @@ var ndef = {
 
 // nfc provides javascript wrappers to the native phonegap implementation
 var nfc = {
+    initializePlugin: function(onsuccess, onfailure) {
+    
+        // This was historically done in cordova.addConstructor but broke with PhoneGap-2.2.0.
+        // We need to handle NFC from an Intent that launched the application, but *after*
+        // the code in the application's deviceready has run.  After upgrading to 2.2.0,
+        // addConstructor was finishing *before* deviceReady was complete and the
+        // ndef listeners had not been registered.
+        // It seems like there should be a better solution.
+        if (cordova.platformId === "android" || cordova.platformId === "windows") {
+            cordova.exec(
+                function () {
+                    console.log("Initialized the NfcPlugin");
+                    if (onsuccess)
+                        onsuccess();
+                },
+                function (reason) {
+                    console.log("Failed to initialize the NfcPlugin: " + reason);
+                    if (onfailure)
+                        onfailure("Failed to initialize the NfcPlugin: " + reason);
+                },
+                "NfcPlugin", "init", []
+            );
+        }
+    },
 
     addTagDiscoveredListener: function (callback, win, fail) {
         document.addEventListener("tag", callback, false);
